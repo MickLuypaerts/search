@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"search/search"
+
+	"github.com/MickLuypaerts/search/search"
 )
 
 func usage() {
