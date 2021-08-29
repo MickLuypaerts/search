@@ -68,7 +68,6 @@ func searchDirRec(pattern *regexp.Regexp, dirName string, matches *int, bufFlag 
 		} else {
 			if pattern.MatchString(dir[i].Name()) {
 				*matches++
-				//fmt.Println(dirName + string(os.PathSeparator) + dir[i].Name())
 				fmt.Fprintln(f, dirName+string(os.PathSeparator)+dir[i].Name())
 			}
 		}
