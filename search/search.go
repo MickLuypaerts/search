@@ -16,7 +16,7 @@ func isDir(file string) (bool, error) {
 	return maybeDir.IsDir(), nil
 }
 
-func Search(pattern string, fileName string) error {
+func Search(pattern string, fileName string, lnFlag *bool, bufFlag *int) error {
 	start := time.Now()
 	matches := 0
 	reg, err := regexp.Compile(pattern)
@@ -28,12 +28,12 @@ func Search(pattern string, fileName string) error {
 		return err
 	}
 	if isDir {
-		matches, err = searchDir(reg, fileName)
+		matches, err = searchDir(reg, fileName, bufFlag)
 		if err != nil {
 			return err
 		}
 	} else {
-		matches, err = searchFile(reg, fileName)
+		matches, err = searchFile(reg, fileName, lnFlag)
 		if err != nil {
 			return err
 		}
@@ -43,25 +43,25 @@ func Search(pattern string, fileName string) error {
 	return nil
 }
 
-func searchDir(pattern *regexp.Regexp, dirName string) (int, error) {
+func searchDir(pattern *regexp.Regexp, dirName string, bufFlag *int) (int, error) {
 	var matches int
-	err := searchDirRec(pattern, dirName, &matches)
+	err := searchDirRec(pattern, dirName, &matches, bufFlag)
 	if err != nil {
 		return matches, err
 	}
 	return matches, nil
 }
 
-func searchDirRec(pattern *regexp.Regexp, dirName string, matches *int) error {
+func searchDirRec(pattern *regexp.Regexp, dirName string, matches *int, bufFlag *int) error {
 	dir, err := os.ReadDir(dirName)
-	f := bufio.NewWriter(os.Stdout)
+	f := bufio.NewWriterSize(os.Stdout, *bufFlag)
 	defer f.Flush()
 	if err != nil {
 		fmt.Printf("ERROR: can't read: %s: %s\n", dirName, err)
 	}
 	for i := range dir {
 		if dir[i].IsDir() {
-			err = searchDirRec(pattern, dirName+string(os.PathSeparator)+dir[i].Name(), matches)
+			err = searchDirRec(pattern, dirName+string(os.PathSeparator)+dir[i].Name(), matches, bufFlag)
 			if err != nil {
 				return err
 			}
@@ -76,9 +76,10 @@ func searchDirRec(pattern *regexp.Regexp, dirName string, matches *int) error {
 	return nil
 }
 
-func searchFile(pattern *regexp.Regexp, fileName string) (int, error) {
+func searchFile(pattern *regexp.Regexp, fileName string, lnFlag *bool) (int, error) {
 	file, err := os.Open(fileName)
 	matches := 0
+	ln := 0
 	if err != nil {
 		return 0, err
 	}
@@ -89,7 +90,11 @@ func searchFile(pattern *regexp.Regexp, fileName string) (int, error) {
 
 		if pattern.MatchString(scanner.Text()) {
 			matches++
+			if *lnFlag {
+				fmt.Printf("%d:", ln)
+			}
 			fmt.Println(scanner.Text())
+			ln++
 		}
 	}
 	return matches, nil
